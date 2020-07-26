@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONNECT</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+        }
+        
+        div {
+            flex: 1;
+        }
+        
+        div>a {
+            text-align: center;
+            width: 50%;
+            display: block;
+        }
+        
+        div>input[type=checkbox] {
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="local">
+        <textarea id="localMessage" cols="40" rows="10"></textarea>
+        <br>
+        <a href="javascript:localSend()">SEND</a>
+        <br>
+        <textarea id="localRecieve" cols="40" rows="10"></textarea>
+        <hr>
+        <input type="checkbox" name="local_connection_created" id="local_connection_created">Connection Created<br>
+        <input type="checkbox" name="local_datachannel_created" id="local_datachannel_created">Data Channel Created<br>
+        <input type="checkbox" name="local_icecandidate_added" id="local_icecandidate_added">ICE Candidate Added<br>
+        <input type="checkbox" name="local_offer_created" id="local_offer_created">Offer Created<br>
+        <input type="checkbox" name="local_local_description_set" id="local_local_description_set">Set Local Description<br>
+        <input type="checkbox" name="local_remote_description_set" id="local_remote_description_set">Set Remote Description<br>
+        <input type="checkbox" name="local_datachannel_open" id="local_datachannel_open">Data Channel Open<br>
+        <input type="checkbox" name="local_datachannel_ready" id="local_datachannel_ready">Data Channel Ready<br>
+    </div>
+    <div class="remote">
+        <textarea id="remoteMessage" cols="40" rows="10"></textarea>
+        <br>
+        <a href="javascript:remoteSend()">SEND</a>
+        <br>
+        <textarea id="remoteRecieve" cols="40" rows="10"></textarea>
+        <hr>
+        <input type="checkbox" name="remote_connection_created" id="remote_connection_created">Connection Created<br>
+        <input type="checkbox" name="remote_icecandidate_added" id="remote_icecandidate_added">ICE Candidate Added<br>
+        <input type="checkbox" name="remote_answer_created" id="remote_answer_created">Answer Created<br>
+        <input type="checkbox" name="remote_local_description_set" id="remote_local_description_set">Set Local Description<br>
+        <input type="checkbox" name="remote_remote_description_set" id="remote_remote_description_set">Set Remote Description<br>
+        <input type="checkbox" name="remote_datachannel_open" id="remote_datachannel_open">Data Channel Open<br>
+        <input type="checkbox" name="remote_datachannel_ready" id="remote_datachannel_ready">Data Channel Ready<br>
+    </div>
+</body>
+<script>
+    const localInput = document.querySelector('textarea#localInput')
+    const localOutput = document.querySelector('textarea#localOutput')
+    const remoteInput = document.querySelector('textarea#remoteInput')
+    const remoteOutput = document.querySelector('textarea#remoteOutput')
+    let localConnection, remoteConnection
+    let offer, answer
+    let localDataChannel, remoteDataChannel
+    let isLocalOpen = false,
+        isRemoteOpen = false
+
+    localConnection = new RTCPeerConnection()
+    document.querySelector('#local_connection_created').checked = true
+    remoteConnection = new RTCPeerConnection()
+    document.querySelector('#remote_connection_created').checked = true
+
+    localDataChannel = localConnection.createDataChannel('DC', {
+        reliable: false
+    })
+    document.querySelector('#local_datachannel_created').checked = true
+
+    localConnection.addEventListener('icecandidate', event => {
+        console.debug('local ice candidate')
+        if (event.candidate) {
+            remoteConnection.addIceCandidate(event.candidate).then(() => {
+                console.debug('Added ice candidate')
+                document.querySelector('#remote_icecandidate_added').checked = true
+            }, error => {
+                console.log('Error adding ice candidate')
+            })
+        }
+    })
+    localDataChannel.addEventListener('open', event => {
+        console.debug('Local Channel open')
+        document.querySelector('#local_datachannel_open').checked = true
+            // console.log(event)
+        if (localDataChannel.readyState === 'open') {
+            document.querySelector('#local_datachannel_ready').checked = true
+            isLocalOpen = true
+            localDataChannel.send('HELLO from local')
+        } else if (localDataChannel.readyState === 'connecting') {
+            console.debug('Connecting')
+        }
+    })
+    localDataChannel.addEventListener('message', message => {
+        console.log('%cMessage from remote: ' + message.data, 'background-color: black; color: white; padding: 1em;')
+        document.querySelector('textarea#localRecieve').value = message.data
+    })
+    localDataChannel.addEventListener('close', message => {
+        console.log('Data channel closed')
+    })
+
+    // const remoteDataChannel = localConnection.createDataChannel('DC', {
+    //     reliable: false
+    // })
+
+    remoteConnection.addEventListener('icecandidate', event => {
+        console.debug('remote ice candidate')
+        if (event.candidate) {
+            localConnection.addIceCandidate(event.candidate).then(() => {
+                console.debug('Added ice candidate')
+                document.querySelector('#local_icecandidate_added').checked = true
+            }, error => {
+                console.log(error)
+                console.log('Error adding ice candidate')
+            })
+        }
+    })
+
+    remoteConnection.addEventListener('datachannel', event => {
+        // console.log(event)
+        document.querySelector('#remote_datachannel_open').checked = true
+        remoteDataChannel = event.channel
+        remoteDataChannel.addEventListener('open', event => {
+            console.debug('Remote Channel open')
+            if (remoteDataChannel.readyState === 'open') {
+                document.querySelector('#remote_datachannel_ready').checked = true
+                isRemoteOpen = true
+                remoteDataChannel.send('HELLO from remote')
+            }
+        })
+        remoteDataChannel.addEventListener('message', message => {
+            console.log('%cMessage from Local: ' + message.data, 'background-color: black; color: white; padding: 1em;')
+            document.querySelector('textarea#remoteRecieve').value = message.data
+        })
+        remoteDataChannel.addEventListener('close', () => {
+            console.debug('Remote data channel closed')
+        })
+    })
+
+    localConnection.createOffer().then(desc => {
+        document.querySelector('#local_offer_created').checked = true
+
+        offer = desc
+
+        localConnection.setLocalDescription(offer)
+        document.querySelector('#local_local_description_set').checked = true
+
+        remoteConnection.setRemoteDescription(offer)
+        document.querySelector('#remote_remote_description_set').checked = true
+
+        remoteConnection.createAnswer().then(desc => {
+            document.querySelector('#remote_answer_created').checked = true
+
+            answer = desc
+
+            remoteConnection.setLocalDescription(answer)
+            document.querySelector('#remote_local_description_set').checked = true
+
+            localConnection.setRemoteDescription(answer)
+            document.querySelector('#local_remote_description_set').checked = true
+
+            checkConnection()
+        })
+    })
+
+    function checkConnection() {
+        const no = 'background-color:red; color: white;'
+        const ok = 'background-color:green; color: white;'
+        if (localConnection && localConnection.localDescription && localConnection.remoteDescription) {
+            console.log('%c LOCAL CONNECTION ESTABLISHED ', ok)
+        } else {
+            console.log('%c LOCAL CONNECTION FAILED ', no)
+        }
+
+        if (remoteConnection && remoteConnection.localDescription && remoteConnection.remoteDescription) {
+            console.log('%c REMOTE CONNECTION ESTABLISHED ', ok)
+        } else {
+            console.log('%c REMOTE CONNECTION FAILED ', no)
+        }
+    }
+
+    function localSend() {
+        if (isLocalOpen) {
+            if (isRemoteOpen) {
+                localDataChannel.send(document.querySelector('textarea#localMessage').value)
+            } else {
+                console.log('%cRemote connection not open', 'background-color: white; color: red;')
+            }
+        } else {
+            console.log('%cLocal connection not open', 'background-color: white; color: red;')
+        }
+    }
+
+    function remoteSend() {
+        if (isRemoteOpen) {
+            if (isLocalOpen) {
+                remoteDataChannel.send(document.querySelector('textarea#remoteMessage').value)
+            } else {
+                console.log('%cLocal connection not open', 'background-color: white; color: red;')
+            }
+        } else {
+            console.log('%cRemote connection not open', 'background-color: white; color: red;')
+        }
+    }
+</script>
+
+</html>
