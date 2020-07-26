@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST</title>
+    <style>
+        div {
+            display: flex;
+        }
+        
+        div>span {
+            flex: 1;
+        }
+        
+        div>span>textarea {
+            font-size: 1.2em;
+            width: 99%;
+            display: block;
+            height: 100%;
+            min-height: 4em;
+        }
+        
+        div>span>a {
+            display: block;
+            width: 50%;
+            text-align: center;
+        }
+        
+        div>span>input {
+        }
+    </style>
+</head>
+
+<body>
+    To create room add <strong>#<em>room_name</em></strong> in url
+
+    <div>
+        <span>
+            <textarea name="msg" id="msg" placeholder="Message here"></textarea>
+            <a href="javascript:sendMsg()">SEND</a>
+        </span>
+        <span>
+            <textarea name="rec" id="rec" placeholder="Recieved messages here" readonly></textarea>
+        
+            <input type="checkbox" name="connection_created" id="connection_created" disabled>
+            <label for="connection_created">Connection created</label><br>
+
+            <input type="checkbox" name="room_set" id="room_set" disabled>
+            <label for="room_set">Room set</label><br>
+
+            <input type="checkbox" name="channel_created" id="channel_created" disabled>
+            <label for="channel_created">Data channel created</label><br>
+
+            <input type="checkbox" name="candidate_added" id="candidate_added" disabled>
+            <label for="candidate_added">Added ICE Candidate</label><br>
+
+            <input type="checkbox" name="channel_open" id="channel_open" disabled>
+            <label for="channel_open">Date channel open</label><br>
+
+            <input type="checkbox" name="channel_ready" id="channel_ready" disabled>
+            <label for="channel_ready">Data channel ready</label><br>
+
+            <input type="checkbox" name="local_description_set" id="local_description_set" disabled>
+            <label for="local_description_set">Local description set</label><br>
+
+            <input type="checkbox" name="remote_description_set" id="remote_description_set" disabled>
+            <label for="remote_description_set">Remote description set</label><br>
+        </span>
+    </div>
+
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/chat.js"></script>
+
+</html>
