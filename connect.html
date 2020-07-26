@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONNECT</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+        }
+        
+        span {
+            flex: 1;
+        }
+        
+        span a {
+            line-height: 1.5em;
+        }
+        
+        .remote {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <span class="local">
+        <a href="javascript:createLocalPeer()">Create RTCPeerconnection</a><br>
+        <br>
+        <a href="javascript:createOffer()">Create Offer</a><br>
+        <a href="javascript:setLocalLocalDescription()">Set Local Description</a><br>
+        <a href="javascript:">Copy and send &rarr;</a><br>
+        <br><br>
+        <a href="javascript:setLocalRemoteDescription()">Set Remote Description</a><br>
+        <a href="javascript:checkLocal()">CHECK</a><br>
+        <textarea id="localInput" cols="30" rows="5" placeholder="local description"></textarea>
+        <textarea id="localOutput" cols="30" rows="5" placeholder="remote description" readonly></textarea>
+    </span>
+    <span class="remote">
+        <br>
+        <a href="javascript:createRemotePeer()">Create RTCPeerconnection</a><br>
+        <br><br>
+        <a href="javascript:setRemoteRemoteDescription()">Set Remote Description</a><br>
+        <a href="javascript:createAnswer()">Create Answer</a><br>
+        <a href="javascript:setRemoteLocalDescription()">Set Local Description</a><br>
+        <a href="javascript:">&larr; Copy and send</a><br>
+        <a href="javascript:checkRemote()">CHECK</a><br>
+        <textarea id="remoteInput" cols="30" rows="5" placeholder="local description"></textarea>
+        <textarea id="remoteOutput" cols="30" rows="5" placeholder="remote description" readonly></textarea>
+    </span>
+</body>
+<script>
+    const localInput = document.querySelector('textarea#localInput')
+    const localOutput = document.querySelector('textarea#localOutput')
+    const remoteInput = document.querySelector('textarea#remoteInput')
+    const remoteOutput = document.querySelector('textarea#remoteOutput')
+    let localConnection, remoteConnection, offer, answer
+
+    function createLocalPeer() {
+        localConnection = new RTCPeerConnection()
+        console.debug('Created local peer')
+    }
+
+    function createOffer() {
+        localConnection.createOffer().then(sessionDescription => {
+            offer = sessionDescription
+            localInput.value = JSON.stringify(offer)
+            remoteOutput.value = JSON.stringify(offer)
+            console.debug('Created offer')
+        })
+    }
+
+    function setLocalLocalDescription() {
+        localConnection.setLocalDescription(offer)
+        console.debug('Local description set')
+    }
+
+    function setLocalRemoteDescription() {
+        const desc = localInput.value
+        localConnection.setRemoteDescription(JSON.parse(desc))
+        console.debug('Remote description set')
+    }
+
+    function checkLocal() {
+        if (localConnection && localConnection.localDescription && localConnection.remoteDescription) {
+            alert('Established')
+        } else {
+            alert('Failed')
+        }
+    }
+
+    // -------------------------------------------------------- //
+
+    function createRemotePeer() {
+        remoteConnection = new RTCPeerConnection()
+        console.debug('Created remote peer')
+    }
+
+    function setRemoteRemoteDescription() {
+        const desc = remoteInput.value
+        remoteConnection.setRemoteDescription(JSON.parse(desc))
+        console.debug('Remote description set')
+    }
+
+    function createAnswer() {
+        remoteConnection.createAnswer().then(sessionDescription => {
+            answer = sessionDescription
+            remoteInput.value = JSON.stringify(answer)
+            localOutput.value = JSON.stringify(answer)
+            console.debug('Created answer')
+        })
+    }
+
+    function setRemoteLocalDescription() {
+        remoteConnection.setLocalDescription(answer)
+        console.debug('Local description set')
+    }
+
+    function checkRemote() {
+        if (remoteConnection && remoteConnection.localDescription && remoteConnection.remoteDescription) {
+            alert('established')
+        } else {
+            alert('failed')
+        }
+    }
+</script>
+
+</html>
