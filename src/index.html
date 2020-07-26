@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            padding-top: 4px;
+        }
+        
+        div {
+            display: flex;
+        }
+        
+        div>video {
+            flex: 1;
+            /* height: 50vh; */
+        }
+
+        span input[type=checkbox]{
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    To create room add <strong>#<em>room_name</em></strong> in url
+    <div>
+        <video src="" id="local" autoplay></video>
+        <video src="" id="remote" autoplay></video>
+    </div>
+    <span>
+        <input type="checkbox" name="room_set" id="room_set">
+        <label for="room_set">Room Set</label><br>
+
+        <input type="checkbox" name="local_description_set" id="local_description_set">
+        <label for="local_description_set">Local Description Set</label><br>
+        
+        <input type="checkbox" name="remote_description_set" id="remote_description_set">
+        <label for="remote_description_set">Remote Description Set</label><br>
+        
+        <input type="checkbox" name="ice_candidate_sent" id="ice_candidate_sent">
+        <label for="ice_candidate_sent">ICE Candidate Sent</label><br>
+
+        <input type="checkbox" name="ice_candidate_added" id="ice_candidate_added">
+        <label for="ice_candidate_added">ICE Candidate Added</label><br>
+
+        <input type="checkbox" name="recieved_track" id="recieved_track">
+        <label for="recieved_track">Recieved Track</label><br>
+
+        <input type="checkbox" name="got_video" id="got_video">
+        <label for="got_video">Video Capturing Started</label><br>
+        
+    </span>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/stream.js"></script>
+
+</html>
