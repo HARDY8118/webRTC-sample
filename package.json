@@ -1,0 +1,16 @@
+{
+    "name": "webrtc-sample-chat",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Harshit Vishnoi <harshitvishnoi10@gmail.com>",
+    "license": "ISC",
+    "dependencies": {
+        "cookie": "^0.4.1",
+        "express": "^4.17.1",
+        "socket.io": "^2.3.0"
+    }
+}
