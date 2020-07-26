@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STREAM</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+        }
+        
+        div {
+            flex: 1;
+            width: 675px;
+            height: 337px;
+            position: relative;
+        }
+        
+        video#localRemoteVideo,
+        video#remoteRemoteVideo {
+            position: absolute;
+            height: 168px;
+            width: 337px;
+            bottom: 0;
+            left: 0;
+            background-color: cadetblue;
+        }
+        
+        video#localLocalVideo,
+        video#remoteLocalVideo {
+            position: absolute;
+            height: 168px;
+            width: 337px;
+            top: 0;
+            right: 0;
+            background-color: aqua;
+        }
+        
+        button {
+            width: 100%;
+            height: 4em;
+            margin-top: 380px;
+        }
+        
+        input[type=checkbox] {
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="local">
+        <video src="" id="localLocalVideo" autoplay></video>
+        <video src="" id="localRemoteVideo" autoplay></video>
+        <button id="localBtn">START</button>
+        <input type="checkbox" name="local_connection_created" id="local_connection_created">Connection Created<br>
+        <input type="checkbox" name="local_captured_stream" id="local_captured_stream">Captured Stream<br>
+        <input type="checkbox" name="local_offer_created" id="local_offer_created">Offer Created<br>
+        <input type="checkbox" name="local_local_description_set" id="local_local_description_set">Set Local Description<br>
+        <input type="checkbox" name="local_remote_description_set" id="local_remote_description_set">Set Remote Description<br>
+        <input type="checkbox" name="local_icecandidate_added" id="local_icecandidate_added">Added ICE Candidate<br>
+        <input type="checkbox" name="local_recieved_tracks" id="local_recieved_tracks">Recieved Tracks<br>
+    </div>
+    <div class="remote">
+        <video src="" id="remoteLocalVideo" autoplay></video>
+        <video src="" id="remoteRemoteVideo" autoplay></video>
+        <button id="remoteBtn" disabled>START</button>
+        <input type="checkbox" name="remote_connection_created" id="remote_connection_created">Connection Created<br>
+        <input type="checkbox" name="remote_captured_stream" id="remote_captured_stream">Captured Stream<br>
+        <input type="checkbox" name="remote_answer_created" id="remote_answer_created">Answer Created<br>
+        <input type="checkbox" name="remote_local_description_set" id="remote_local_description_set">Set Local Description<br>
+        <input type="checkbox" name="remote_remote_description_set" id="remote_remote_description_set">Set Remote Description<br>
+        <input type="checkbox" name="remote_icecandidate_added" id="remote_icecandidate_added">Added ICE Candidate<br>
+        <input type="checkbox" name="remote_recieved_tracks" id="remote_recieved_tracks">Recieved Tracks<br>
+    </div>
+</body>
+<script>
+    const localBtn = document.querySelector('#localBtn')
+    const remoteBtn = document.querySelector('#remoteBtn')
+
+    const localLocalVideo = document.querySelector('#localLocalVideo')
+    const localRemoteVideo = document.querySelector('#localRemoteVideo')
+
+    const remoteLocalVideo = document.querySelector('#remoteLocalVideo')
+    const remoteRemoteVideo = document.querySelector('#remoteRemoteVideo')
+
+    const localConnection = new RTCPeerConnection()
+    document.querySelector('#local_connection_created').checked = true
+
+    const remoteConnection = new RTCPeerConnection()
+    document.querySelector('#remote_connection_created').checked = true
+
+
+    let localStream, remoteStream, offer, answer
+
+    function getVideo(constraints) {
+        if (navigator.mediaDevices) {
+            if (navigator.mediaDevices.getUserMedia) {
+                return navigator.mediaDevices.getUserMedia(constraints)
+            } else if (navigator.mediaDevices.webkitGetUserMedia) {
+                return navigator.mediaDevices.webkitGetUserMedia(constraints)
+            }
+        } else {
+            if (navigator.getUserMedia) {
+                return navigator.getUserMedia(constraints)
+            } else if (navigator.webkitGetUserMedia) {
+                return navigator.webkitGetUserMedia(constraints)
+            }
+        }
+    }
+
+    localBtn.addEventListener('click', () => {
+        if (localBtn.textContent != "START") {
+            localConnection.close()
+            localBtn.textContent = 'START'
+        } else {
+            getVideo({
+                video: {
+                    width: 337,
+                    height: 168
+                },
+                audio: false
+            }).then(stream => {
+                document.querySelector('#local_captured_stream').checked = true
+                    // localStream=stream
+                stream.getTracks().forEach(track => {
+                    localConnection.addTrack(track, stream)
+                });
+                localLocalVideo.srcObject = stream
+                return localConnection.createOffer()
+            }).then(desc => {
+                document.querySelector('#local_offer_created').checked = true
+                localConnection.setLocalDescription(desc)
+                document.querySelector('#local_local_description_set').checked = true
+
+                remoteConnection.setRemoteDescription(desc)
+                document.querySelector('#remote_remote_description_set').checked = true
+
+                offer = desc
+                remoteBtn.disabled = false
+                localBtn.textContent = 'STOP'
+            }).catch(error => {
+                console.log('Error getting local video')
+            })
+        }
+    })
+
+    remoteBtn.addEventListener('click', () => {
+        if (remoteBtn.textContent != "START") {
+            remoteConnection.close()
+            remoteBtn.textContent = 'START'
+        } else {
+            getVideo({
+                video: {
+                    width: 337,
+                    height: 168
+                },
+                audio: false
+            }).then(stream => {
+                document.querySelector('#remote_captured_stream').checked = true
+
+                stream.getTracks().forEach(track => {
+                    remoteConnection.addTrack(track, stream)
+                });
+                remoteLocalVideo.srcObject = stream
+                return remoteConnection.createAnswer()
+            }).then(desc => {
+                document.querySelector('#remote_answer_created').checked = true
+
+                remoteConnection.setLocalDescription(desc)
+                document.querySelector('#remote_local_description_set').checked = true
+
+                localConnection.setRemoteDescription(desc)
+                document.querySelector('#local_remote_description_set').checked = true
+
+                answer = desc
+                checkConnection()
+                remoteBtn.textContent = 'STOP'
+            }).catch(error => {
+                console.error(error)
+                console.error('Error getting remote video')
+            })
+        }
+    })
+
+    // --------------------------------------------------------
+
+    localConnection.addEventListener('icecandidate', e => {
+        console.debug('Local ICE candidate')
+        if (e.candidate)
+            remoteConnection.addIceCandidate(e.candidate)
+        document.querySelector('#remote_icecandidate_added').checked = true
+    })
+    localConnection.addEventListener('track', event => {
+        document.querySelector('#local_recieved_tracks').checked = true
+            // console.log(event)
+        event.streams.forEach(stream => {
+            localRemoteVideo.srcObject = stream
+        })
+    })
+    remoteConnection.addEventListener('icecandidate', e => {
+        console.debug('Remote ICE candidate')
+        if (e.candidate)
+            localConnection.addIceCandidate(e.candidate)
+        document.querySelector('#local_icecandidate_added').checked = true
+    })
+    remoteConnection.addEventListener('track', event => {
+        document.querySelector('#remote_recieved_tracks').checked = true
+        event.streams.forEach(stream => {
+            remoteRemoteVideo.srcObject = stream
+        })
+    })
+
+    // --------------------------------------------------------
+
+    function checkConnection() {
+        let okToConnect = false
+        const no = 'background-color:red; color: white;'
+        const ok = 'background-color:green; color: white;'
+        if (localConnection && localConnection.localDescription && localConnection.remoteDescription) {
+            console.log('%c LOCAL CONNECTION ESTABLISHED ', ok)
+            okToConnect = true
+        } else {
+            console.log('%c LOCAL CONNECTION FAILED ', no)
+        }
+
+        if (remoteConnection && remoteConnection.localDescription && remoteConnection.remoteDescription) {
+            console.log('%c REMOTE CONNECTION ESTABLISHED ', ok)
+            return okToConnect ? true : false
+        } else {
+            console.log('%c REMOTE CONNECTION FAILED ', no)
+            return false
+        }
+    }
+</script>
+
+</html>
